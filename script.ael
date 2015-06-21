@@ -1,0 +1,52 @@
+### Autor: Willie Lawrence
+### Email: cptx032 arroba gmail ponto com
+
+### Ael tem a sintaxe parecida com a do Tcl:
+### <comando> <param1> <param2> <param3>.
+### os parâmetros precisam ser separados por espaço
+### e cada comando precisa terminar com o caractere "." (ponto)
+### 
+### Se um dos argumento de um comando precisar
+### ter um espaco em branco o parâmetro pode ser encapsulado
+### com os carateres chaves: "{}"
+
+###### VARIÁVEIS
+### As variáveis ficam guardadas num dicionário hash
+### isso significa que pode ser criada uma variável com acentos
+### ou mesmo com espaços em branco.
+### Para criar uma variável usa-se a função "set":
+### set MinhaVariável Valor.
+### ou
+### set {meu nome} {Willie Lawrence}. trace {meu nome}.
+
+### Para listar todas as variáveis criadas usa-se o comando: "ls".
+###    obs: o comando ls não mostra as variáveis que iniciam com "__".
+### Caso o comando não encontre a variável ela irá usar o próprio
+### identificador. Por exemplo:
+### trace MeuNome.
+### se a variável "MeuNome" não for encontrada será impresso na tela
+### a string "MeuNome"
+
+
+###### FUNÇÕES
+### Para listar todas as funções criadas usa-se o comando "lf".
+### Caso o Ael não consiga encontrar a função dada uma outra função
+### será executada no lugar. Os parâmetros passados como parâmetro para
+### essa nova função são o próprio comando. Por exemplo, o comando:
+### iLove What? Programming!.
+### Ael não encontrará a função "iLove", então vai executar a função
+### que está na variável "__ael_default_function" (que por padrão é "run")
+### Então o Ael fará:
+### run iLove What? Programming!.
+### o "run" nesse caso também não vai encontrar fazer nada, pois
+### o comando é inválido (pois ele não termina com "."). Para mais
+### detalhes da função "run" veja a lista de funções logo abaixo.
+
+### LISTA DE FUNÇÕES:
+# comming soon
+
+print {Enter your name: }.
+input name.
+print {Welcome, } name ! \n.
+getpid ID.
+trace __ael_default_function.
