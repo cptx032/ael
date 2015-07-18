@@ -21,6 +21,10 @@ Author: Willie Lawrence - cptx032@gmail.com
 
 #define AEL_VERSION "1.0.0.1"
 
+// [doc] When a function is not found the function saved
+// in this var is runned
+#define AEL_DEFAULT_FUNCTION "__ael_default_function"
+
 typedef std::string tok; // token
 typedef std::vector<tok> phrase;
 typedef unsigned int uint;
@@ -263,7 +267,7 @@ public:
 		{
 			// [fixme] > evitar criar uma nova lista
 			std::vector<tok> _new_phrase;
-			_new_phrase.push_back(this->get_value("__ael_default_function"));
+			_new_phrase.push_back(this->get_value(AEL_DEFAULT_FUNCTION));
 			for (uint i=0;i<ph.size();i++)
 			{
 				_new_phrase.push_back(ph[i]);
@@ -634,23 +638,7 @@ void _ael_load(aelinterpreter& ael, phrase& ph)
 		return;
 	}
 	lib_init(ael, ph);
-	
-	aelnamefunction _names = (aelnamefunction)dlsym(dllHandle,"ael_names");
-	aeldict _ael_names = _names();
-	for(uint i=2;i<ph.size();i++)
-	{
-		tok f_name = _ael_names[ph[i]];
-		aelfunction func;
-		func = (aelfunction)dlsym(dllHandle, f_name.c_str());
-		if(!func)
-		{
-			std::cerr << "Can't find " << ph[i]
-			<< std::endl;
-		return;
-		}
-		ael.functions[ph[i]] = func;
-		// dlclose(dllhandle);
-	}
+	// dlclose(dllhandle);
 }
 #endif
 

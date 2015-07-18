@@ -1,0 +1,8 @@
+load {poo.so.1}.
+#if= poo loaded
+#{
+#	obj hei.
+#}
+obj hei.
+obj gum.
+hei man.
