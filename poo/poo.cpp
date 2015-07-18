@@ -66,14 +66,13 @@ void ael_create_object(aelinterpreter& ael, phrase& ph)
 		store_object(ael, aelo);
 	}
 }
-// [fixme] comment this to compile file.cpp
-/*
+#ifdef AEL_LIB
 void ael_lib_init(aelinterpreter& ael, phrase& ph)
 {
 	ael.dictionary["poo"] = "loaded";
 	ael.functions["obj"] = ael_create_object;
 }
-*/
+#endif
 
 #ifdef __cplusplus
 }
