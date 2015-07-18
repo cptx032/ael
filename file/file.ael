@@ -1,0 +1,13 @@
+load {file.so.1}.
+file arquivo1.
+file arquivo2.
+arquivo1 open {arquivo1.txt}.
+arquivo2 open {arquivo2.txt}.
+
+arquivo1 << Hei.
+arquivo2 << Test.
+arquivo1 << Hei2.
+arquivo2 << Test2.
+
+arquivo1 close.
+arquivo2 close.

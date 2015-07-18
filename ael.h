@@ -581,22 +581,6 @@ void _ael_load(aelinterpreter& ael, phrase& _phrase)
 		return;
 	}
 	lib_init(ael, _phrase);
-
-	aelnamefunction _names = (aelnamefunction)GetProcAddress(dllHandle,"ael_names");
-	aeldict _ael_names = _names();
-	for(uint i=2;i<_phrase.size();i++)
-	{
-		tok f_name = _ael_names[_phrase[i]];
-		aelfunction func;
-		func = (aelfunction)GetProcAddress(dllHandle, f_name.c_str());
-		if(!func)
-		{
-			std::cerr << "Can't find " << _phrase[i]
-			<< std::endl;
-		return;
-		}
-		ael.functions[_phrase[i]] = func;
-	}
 }
 #endif
 #ifdef __unix
