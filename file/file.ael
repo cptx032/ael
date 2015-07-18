@@ -1,13 +1,17 @@
+# loading file library
 load {file.so.1}.
-file arquivo1.
-file arquivo2.
-arquivo1 open {arquivo1.txt}.
-arquivo2 open {arquivo2.txt}.
+# creating instance
+file f.
+# opening file for writing
+f writeto {here.txt}.
+print {Diga alguma coisa: }.
+input coisa.
+# writing in it
+f << coisa.
+f close.
 
-arquivo1 << Hei.
-arquivo2 << Test.
-arquivo1 << Hei2.
-arquivo2 << Test2.
-
-arquivo1 close.
-arquivo2 close.
+# reading from file
+file g.
+g readfrom {here.txt}.
+g >> file_content.
+print {You said: } file_content.

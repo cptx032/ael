@@ -11,26 +11,51 @@ extern "C" {
 class aelfilestream : public aelobject
 {
 private:
-	std::ofstream __file;
-	void open(std::string filepath)
+	std::ofstream __file_output;
+	std::ifstream __file_input;
+	void writeto(std::string filepath)
 	{
-		__file.open(filepath);
+		__file_output.open(filepath);
+	}
+	void readfrom(std::string filepath)
+	{
+		__file_input.open(filepath);
 	}
 public:
 	void call(aelinterpreter& ael, phrase& ph)
 	{
-		if(ph[1] == "open")
+		if(ph[1] == "writeto")
 		{
-			this->open( ael.get_value(ph[2]) );
+			this->writeto( ael.get_value(ph[2]) );
+		}
+		else if(ph[1] == "readfrom")
+		{
+			this->readfrom( ael.get_value(ph[2]) );
 		}
 		else if(ph[1] == "close")
 		{
-			this->__file.close();
+			this->__file_output.close();
+			this->__file_input.close();
 		}
 		else if(ph[1] == "<<")
 		{
-			if(this->__file.is_open())
-				this->__file << ph[2];
+			if(this->__file_output.is_open())
+			{
+				this->__file_output << ael.get_value(ph[2]);
+			}
+		}
+		else if(ph[1] == ">>")
+		{
+			if(this->__file_input.is_open())
+			{
+				std::string content;
+				std::string line;
+				while ( getline (this->__file_input,line) )
+				{
+					content += line + '\n';
+				}
+				ael.dictionary[ph[2]] = content;
+			}
 		}
 	}
 };
