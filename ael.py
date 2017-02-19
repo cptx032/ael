@@ -145,10 +145,46 @@ def _ael_lf(ael, phrase):
 @arguments(length=[1])
 def _ael_opr_unary_plus(ael, phrase):
 	value = ael.get_value(phrase[1])
+	cast_func = int
 	if '.' in value:
-		ael.dictionary[phrase[1]] = str(float(value)+1.0)
+		cast_func = float
+	ael.dictionary[phrase[1]] = str(cast_func(value) + 1)
+
+@arguments(length=[1])
+def _ael_opr_unary_minus(ael, phrase):
+	value = ael.get_value(phrase[1])
+	cast_func = int
+	if '.' in value:
+		cast_func = float
+	ael.dictionary[phrase[1]] = str(cast_func(value) - 1)
+
+@arguments(length=[2,3])
+def _ael_add_number(ael, phrase):
+	cast_func = int
+	value1, value2 = ael.get_value(phrase[1]), ael.get_value(phrase[2])
+	if '.' in value1 or '.' in value2:
+		cast_func = float
+	value1, value2 = cast_func(value1), cast_func(value2)
+	if len(phrase) == 4:
+		ael.dictionary[phrase[3]] = str(value1 + value2)
 	else:
-		ael.dictionary[phrase[1]] = str(int(value)+1)
+		ael.dictionary[phrase[1]] = str(value1 + value2)
+
+@arguments(length=[3])
+def _ael_if_gt(ael, phrase):
+	value1, value2 = float(ael.get_value(phrase[1])), float(ael.get_value(phrase[2]))
+	if value1 > value2:
+		p = []
+		ael.to_tokens(phrase[3], p)
+		ael.interprets(p)
+
+@arguments(length=[3])
+def _ael_if_lt(ael, phrase):
+	value1, value2 = float(ael.get_value(phrase[1])), float(ael.get_value(phrase[2]))
+	if value1 < value2:
+		p = []
+		ael.to_tokens(phrase[3], p)
+		ael.interprets(p)
 
 def load_main_ael_functions(ael):
 	ael.functions.update(
@@ -164,6 +200,10 @@ def load_main_ael_functions(ael):
 	ael.functions['print'] = _ael_print
 	ael.functions['del'] = _ael_del
 	ael.functions['++'] = _ael_opr_unary_plus
+	ael.functions['--'] = _ael_opr_unary_minus
+	ael.functions['+'] = _ael_add_number
+	ael.functions['>'] = _ael_if_gt
+	ael.functions['<'] = _ael_if_lt
 	ael.dictionary.update(
 		__ael_default_function='run'
 	)
