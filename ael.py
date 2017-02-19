@@ -142,6 +142,14 @@ def _ael_ls(ael, phrase):
 def _ael_lf(ael, phrase):
 	ael.stdout.write(str(ael.functions) + '\n')
 
+@arguments(length=[1])
+def _ael_opr_unary_plus(ael, phrase):
+	value = ael.get_value(phrase[1])
+	if '.' in value:
+		ael.dictionary[phrase[1]] = str(float(value)+1.0)
+	else:
+		ael.dictionary[phrase[1]] = str(int(value)+1)
+
 def load_main_ael_functions(ael):
 	ael.functions.update(
 		trace=_ael_trace,
@@ -155,6 +163,7 @@ def load_main_ael_functions(ael):
 	ael.functions['#'] = _ael_pass
 	ael.functions['print'] = _ael_print
 	ael.functions['del'] = _ael_del
+	ael.functions['++'] = _ael_opr_unary_plus
 	ael.dictionary.update(
 		__ael_default_function='run'
 	)
