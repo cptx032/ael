@@ -2,6 +2,7 @@
 # Author: Willie Lawrence
 # Email cptx032 arroba gmail dot com
 import sys
+import random
 
 AEL_DEFAULT_FUNCTION = '__ael_default_function'
 def is_a_blank_char(c):
@@ -186,6 +187,21 @@ def _ael_if_lt(ael, phrase):
 		ael.to_tokens(phrase[3], p)
 		ael.interprets(p)
 
+@arguments(length=[3])
+def _ael_randint(ael, phrase):
+	value1, value2 = int(ael.get_value(phrase[1])), int(ael.get_value(phrase[2]))
+	ael.dictionary[phrase[3]] = str(random.randint(value1, value2))
+
+@arguments(length=[2])
+def _ael_loop(ael, phrase):
+	loop = int(ael.get_value(phrase[1]))
+	script = ael.get_value(phrase[2])
+	p = []
+	ael.to_tokens(script, p)
+	while loop > 0:
+		loop -= 1
+		ael.interprets(p)
+
 def load_main_ael_functions(ael):
 	ael.functions.update(
 		trace=_ael_trace,
@@ -194,7 +210,9 @@ def load_main_ael_functions(ael):
 		run=_ael_run,
 		exit=_ael_exit,
 		ls=_ael_ls,
-		lf=_ael_lf
+		lf=_ael_lf,
+		randint=_ael_randint,
+		loop=_ael_loop,
 	)
 	ael.functions['#'] = _ael_pass
 	ael.functions['print'] = _ael_print

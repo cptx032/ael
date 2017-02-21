@@ -19,7 +19,7 @@ Author: Willie Lawrence - cptx032@gmail.com
 	#include <windows.h>
 #endif
 
-#define AEL_VERSION "1.0.0.1"
+#define AEL_VERSION "1.0.0.2"
 
 // [doc] When a function is not found the function saved
 // in this var is runned
@@ -434,51 +434,76 @@ void _ael_lf(aelinterpreter& ael, phrase& ph)
 	std::cout << std::endl;
 }
 
-//[doc] stores the first argument plus one in
-// first argument
-void _ael_opr_unary_plus(aelinterpreter& ael, phrase& ph)
+void _ael_add_number(aelinterpreter& ael, phrase& ph)
 {
-	if(ph.size()!=2)
-	{
-		std::cerr << "Error: " << ph[0] << " takes exactly 1 arguments (" << ph.size()-1 << " given)" << std::endl;
+	if (ph.size()!=3 && ph.size() != 4) {
+		// TODO: format better this error string
+		std::cout << "Error: wrong numbers of arguments" << std::endl;
 		return;
 	}
-	tok _value01 = ael.get_value(ph[1]);
-	double _v01 = atof(_value01.c_str());
-	ael.dictionary[ph[1]] = to_string(_v01+1);
+	double value1 = atof(ael.get_value(ph[1]).c_str());
+	double value2 = atof(ael.get_value(ph[2]).c_str());
+	if (ph.size() == 4) {
+		ael.dictionary[ph[3]] = to_string(value1 + value2);
+	}
+	else {
+		ael.dictionary[ph[1]] = to_string(value1 + value2);
+	}
 }
 
-//[doc] stores the first argument minus one in
-// first argument
-void _ael_opr_unary_minus(aelinterpreter& ael, phrase& ph)
-{
-	if(ph.size()!=2)
-	{
-		std::cerr << "Error: " << ph[0] << " takes exactly 1 arguments (" << ph.size()-1 << " given)" << std::endl;
+void _ael_if_gt(aelinterpreter& ael, phrase& ph) {
+	if (ph.size() != 4) {
+		std::cout << "Error" << std::endl;
 		return;
 	}
-	tok _value01 = ael.get_value(ph[1]);
-	double _v01 = atof(_value01.c_str());
-	ael.dictionary[ph[1]] = to_string(_v01-1);
+	double value1 = atof(ael.get_value(ph[1]).c_str());
+	double value2 = atof(ael.get_value(ph[2]).c_str());
+	if (value1 > value2) {
+		phrase p;
+		ael.to_tokens(ph[3].c_str(), p);
+		ael.interprets(p);
+	}
 }
 
-//[doc] stores the division of first and second arguments
-// in  the third argument
-void _ael_neg(aelinterpreter& ael, phrase& ph)
-{
-	if(ph.size() == 1)
-	{
-		std::cerr << "Error: "+ ph[0] +" takes 1 or 2 arguments (no one given)" << std::endl;
+void _ael_if_lt(aelinterpreter& ael, phrase& ph) {
+	if (ph.size() != 4) {
+		std::cout << "Error" << std::endl;
 		return;
 	}
-	else if(ph.size() == 2)
-		ael.dictionary[ph[1]] = to_string(-atof(ael.get_value(ph[1]).c_str()));
-	else if(ph.size() == 3)
-		ael.dictionary[ph[2]] = to_string(-atof(ael.get_value(ph[1]).c_str()));
-	else
-	{
-		std::cerr << "Error: "+ ph[0] +" takes 1 or 2 arguments" << std::endl;
+	double value1 = atof(ael.get_value(ph[1]).c_str());
+	double value2 = atof(ael.get_value(ph[2]).c_str());
+	if (value1 < value2) {
+		phrase p;
+		ael.to_tokens(ph[3].c_str(), p);
+		ael.interprets(p);
+	}
+}
+
+void _ael_if_eq(aelinterpreter& ael, phrase& ph) {
+	if (ph.size() != 4) {
+		std::cout << "Error" << std::endl;
 		return;
+	}
+	double value1 = atof(ael.get_value(ph[1]).c_str());
+	double value2 = atof(ael.get_value(ph[2]).c_str());
+	if (value1 == value2) {
+		phrase p;
+		ael.to_tokens(ph[3].c_str(), p);
+		ael.interprets(p);
+	}
+}
+
+void _ael_if_neq(aelinterpreter& ael, phrase& ph) {
+	if (ph.size() != 4) {
+		std::cout << "Error" << std::endl;
+		return;
+	}
+	double value1 = atof(ael.get_value(ph[1]).c_str());
+	double value2 = atof(ael.get_value(ph[2]).c_str());
+	if (value1 != value2) {
+		phrase p;
+		ael.to_tokens(ph[3].c_str(), p);
+		ael.interprets(p);
 	}
 }
 
@@ -509,122 +534,96 @@ void _ael_import(aelinterpreter& ael, phrase& ph)
 	ael.to_tokens(content.c_str(), p);
 	ael.interprets(p);
 }
-#ifdef __unix
-//[doc] returns to a var the process id of program
-void _ael_getpid(aelinterpreter& ael, phrase& ph)
-{
-	if(ph.size()!=2)
-	{
-		std::cerr << "Error: " << ph[0] << " takes exactly 1 argument (" << ph.size()-1 << " given)" << std::endl;
-		return;
-	}
-	int pid = (int)getpid();
-	ael.dictionary[ph[1]] = to_string(pid);
-}
-
-//[doc] returns to a var the process id of the parent program
-void _ael_getppid(aelinterpreter& ael, phrase& ph)
-{
-	if(ph.size()!=2)
-	{
-		std::cerr << "Error: " << ph[0] << " takes exactly 1 argument (" << ph.size()-1 << " given)" << std::endl;
-		return;
-	}
-	int pid = (int)getppid();
-	ael.dictionary[ph[1]] = to_string(pid);
-}
-#endif
 
 // [doc] does nothing
 void _ael_nop(aelinterpreter& ael, phrase& ph)
 {
 	// [fixme] > do nothing here...
 }
+int randint(int max, int min)
+{
+	srand(static_cast<unsigned int>(time(0)));
+	return (min <= max) ?
+		((rand() % ((max + 1) - min)) + min) :
+		((rand() % ((min + 1) - max)) + max);
+}
 
-//[doc] loads and dynamic library (c++) from a file path
-void _ael_load(aelinterpreter& ael, phrase& _phrase);
-#ifdef _WIN32
-void _ael_load(aelinterpreter& ael, phrase& _phrase)
-{
-	HINSTANCE dllHandle = NULL;
-	dllHandle = LoadLibrary(ael.get_value(_phrase[1]).c_str());
-	if(!dllHandle)
-	{
-		// finding the library in Windows's AEL_PATH
-		char* _ael_path = NULL;
-		_ael_path = getenv((char*)"AEL_PATH");
-		if(_ael_path == NULL)
-		{
-			std::cerr << "Environment variable not found...please reinstall Ael" << std::endl;
-			abort();
-		}
-		phrase _paths = split(_ael_path, ';');
-		for(uint i=0;i<_paths.size();i++)
-		{
-			tok _possible_path = join(_paths[i], ael.get_value(_phrase[1]));
-			dllHandle = LoadLibrary(_possible_path.c_str());
-			if(dllHandle)
-				break;
-		}
-		// not found in absolute path and not found in AEL_PATH
-		if(!dllHandle)
-		{
-			std::cout << "Library '" << ael.get_value(_phrase[1]) << "' not found!" << std::endl;
-			return;
-		}
-	}
-	aelfunction lib_init;
-	lib_init = (aelfunction)GetProcAddress(dllHandle, "ael_lib_init");
-	if(!lib_init)
-	{
-		std::cerr << "Library not formated!" << std::endl;
+void _ael_randint(aelinterpreter& ael, phrase& ph) {
+	if (ph.size() != 4) {
+		std::cout << "Error" << std::endl;
 		return;
 	}
-	lib_init(ael, _phrase);
+	long value1 = atol(ael.get_value(ph[1]).c_str());
+	long value2 = atol(ael.get_value(ph[2]).c_str());
+	ael.dictionary[ph[3]] = to_string(randint(value1, value2));
 }
-#endif
-#ifdef __unix
-//[doc] unix implementation
-void _ael_load(aelinterpreter& ael, phrase& ph)
-{
-	void* dllHandle = NULL;
-	dllHandle = dlopen(ael.get_value(ph[1]).c_str(), RTLD_LAZY);
-	if(!dllHandle)
-	{
-		// finding the library in Unix's AEL_PATH
-		char* _ael_path = NULL;
-		_ael_path = getenv((char*)"AEL_PATH");
-		if(_ael_path == NULL)
-		{
-			std::cerr << "Environment variable not found...please reinstall Ael" << std::endl;
-			abort();
-		}
-		phrase _paths = split(_ael_path, ';');
-		for(uint i=0;i<_paths.size();i++)
-		{
-			tok _possible_path = join(_paths[i], ael.get_value(ph[1]));
-			dllHandle = dlopen(_possible_path.c_str(), RTLD_LAZY);
-			if(dllHandle)
-				break;
-		}
-		// not found in absolute path and not found in AEL_PATH
-		if(!dllHandle)
-		{
-			std::cerr << "Library '" << ael.get_value(ph[1]) << "' not found!" << std::endl;
-			return;
-		}
+
+void _ael_loop(aelinterpreter& ael, phrase& ph) {
+	int loop = atoi(ael.get_value(ph[1]).c_str());
+	phrase p;
+	ael.to_tokens(ael.get_value(ph[2]).c_str(), p);
+	while (loop > 0) {
+		loop--;
+		ael.interprets(p);
 	}
-	aelfunction lib_init;
-	lib_init = (aelfunction)dlsym(dllHandle, "ael_lib_init");
-	if(!lib_init)
-	{
-		std::cerr << "Library not formated!" << std::endl;
+}
+
+void _ael_if(aelinterpreter& ael, phrase& ph) {
+	// formats:
+	// 1.
+	// 		if <var1> <op> <var2> <code>.
+	// 2.
+	// 		if <var1> <op> <var2> <code> <else> <code>.
+	// TODO: make elifs
+	if (ph.size() != 5 and ph.size() != 7) {
+		std::cerr << "ERROR" << std::endl;
 		return;
 	}
-	lib_init(ael, ph);
-	// dlclose(dllhandle);
+	std::string var1 = ael.get_value(ph[1]);
+	std::string op = ael.get_value(ph[2]);
+	std::string var2 = ael.get_value(ph[3]);
+
+	bool pass_in_if = false;
+	if (op == "==") {
+		pass_in_if = var1 == var2;
+	}
+	else if (op == "!=") {
+		pass_in_if = var1 != var2;
+	}
+	else if (op == ">") {
+		double v1 = atof(var1.c_str());
+		double v2 = atof(var2.c_str());
+		pass_in_if = v1 > v2;
+	}
+	else if (op == ">=") {
+		double v1 = atof(var1.c_str());
+		double v2 = atof(var2.c_str());
+		pass_in_if = v1 >= v2;
+	}
+	else if (op == "<") {
+		double v1 = atof(var1.c_str());
+		double v2 = atof(var2.c_str());
+		pass_in_if = v1 < v2;
+	}
+	else if (op == "<=") {
+		double v1 = atof(var1.c_str());
+		double v2 = atof(var2.c_str());
+		pass_in_if = v1 <= v2;
+	}
+
+	if (pass_in_if) {
+		phrase p;
+		ael.to_tokens(ael.get_value(ph[4]).c_str(), p);
+		ael.interprets(p);
+	}
+	else {
+		if (ph.size() == 7) { // has else
+			phrase p;
+			ael.to_tokens(ael.get_value(ph[6]).c_str(), p);
+			ael.interprets(p);
+		}
+	}
 }
-#endif
 
 //[doc] load main functions
 void load_main_ael_functions(aelinterpreter&i)
@@ -639,19 +638,19 @@ void load_main_ael_functions(aelinterpreter&i)
 	i.functions["ls"] = _ael_ls;
 	i.functions["lf"] = _ael_lf;
 	i.functions["print"] = _ael_print;
-	i.functions["++"] = _ael_opr_unary_plus;
-	i.functions["--"] = _ael_opr_unary_minus;
-	i.functions["neg"] = _ael_neg;
 	i.functions["getenv"] = _ael_getenv;
 	i.functions["import"] = _ael_import;
-	i.functions["nop"] = _ael_nop;
-	i.functions["load"] = _ael_load;
-	#ifdef __unix
-	i.functions["getpid"] = _ael_getpid;
-	i.functions["getppid"] = _ael_getppid;
-	#endif
+	i.functions["#"] = _ael_nop;
+	i.functions["+"] = _ael_add_number;
+	i.functions[">"] = _ael_if_gt;
+	i.functions["<"] = _ael_if_lt;
+	i.functions["=="] = _ael_if_eq;
+	i.functions["!="] = _ael_if_neq;
+	i.functions["randint"] = _ael_randint;
+	i.functions["loop"] = _ael_loop;
+	i.functions["if"] = _ael_if;
 
-	i.dictionary["__version"] = AEL_VERSION;
+	i.dictionary["__ael_version"] = AEL_VERSION;
 
 	i.dictionary["\\n"] = "\n";
 	i.dictionary["\\t"] = "\t";
