@@ -11,13 +11,6 @@ Author: Willie Lawrence - cptx032@gmail.com
 #include <vector>
 #include <unordered_map> // hash_map
 #include <fstream> // reading file
-#ifdef __unix
-	#include <unistd.h> // getpid
-	#include <dlfcn.h>
-#endif
-#ifdef _WIN32
-	#include <windows.h>
-#endif
 
 #define AEL_VERSION "1.0.0.2"
 
@@ -30,6 +23,8 @@ typedef std::vector<tok> phrase;
 typedef unsigned int uint;
 typedef std::unordered_map<tok, tok> aeldict;
 typedef aeldict(*aelnamefunction)(void);
+
+typedef std::vector<tok> string_stack;
 
 bool is_a_blank_char(char _c)
 {
@@ -80,7 +75,7 @@ tok join(tok _dirname, tok _filename)
 }
 
 //[doc] transforms float to string
-tok to_string(float _v)
+tok to_string(double _v)
 {
 	std::ostringstream str_concatenated;
 	str_concatenated << _v;
@@ -145,6 +140,8 @@ public:
 	typedef void(*aelfunction)(aelinterpreter&,phrase&);
 	// dicionário cuja chave é o nome da função e o valor é um ponteiro para função
 	std::unordered_map<tok, aelfunction> functions;
+	// ael lists
+	std::unordered_map<tok, string_stack> stack;
 
 	aelinterpreter(){}
 	//[doc] traduz um script para tokens e adiciona
@@ -238,8 +235,7 @@ public:
 			return key.substr(1, key.size()-2);
 		}
 
-		aeldict::const_iterator got = this->dictionary.find(key);
-		if(got != this->dictionary.end())
+		if(this->has_var(key))
 		{
 			if(this->dictionary[key][0] == '{')
 			{
@@ -252,6 +248,14 @@ public:
 		}
 
 		return key;
+	}
+
+	bool has_var(tok var_identifier) {
+		return this->dictionary.find(var_identifier) != this->dictionary.end();
+	}
+
+	bool has_stack(tok var_identifier) {
+		return this->stack.find(var_identifier) != this->stack.end();
 	}
 	//[doc] executa um único comando identificado pelo
 	// primeiro token passando como argumento todos
@@ -451,6 +455,42 @@ void _ael_add_number(aelinterpreter& ael, phrase& ph)
 	}
 }
 
+// * a b <dest> (if dest is not provided the result is stored in a)
+void _ael_mult_number(aelinterpreter& ael, phrase& ph)
+{
+	if (ph.size()!=3 && ph.size() != 4) {
+		// TODO: format better this error string
+		std::cout << "Error: wrong numbers of arguments" << std::endl;
+		return;
+	}
+	double value1 = atof(ael.get_value(ph[1]).c_str());
+	double value2 = atof(ael.get_value(ph[2]).c_str());
+	if (ph.size() == 4) {
+		ael.dictionary[ph[3]] = to_string(value1 * value2);
+	}
+	else {
+		ael.dictionary[ph[1]] = to_string(value1 * value2);
+	}
+}
+
+// / a b <dest> (if dest is not provided the result is stored in a)
+void _ael_div_number(aelinterpreter& ael, phrase& ph)
+{
+	if (ph.size()!=3 && ph.size() != 4) {
+		// TODO: format better this error string
+		std::cout << "Error: wrong numbers of arguments" << std::endl;
+		return;
+	}
+	double value1 = atof(ael.get_value(ph[1]).c_str());
+	double value2 = atof(ael.get_value(ph[2]).c_str());
+	if (ph.size() == 4) {
+		ael.dictionary[ph[3]] = to_string(value1 / value2);
+	}
+	else {
+		ael.dictionary[ph[1]] = to_string(value1 / value2);
+	}
+}
+
 void _ael_if_gt(aelinterpreter& ael, phrase& ph) {
 	if (ph.size() != 4) {
 		std::cout << "Error" << std::endl;
@@ -540,23 +580,6 @@ void _ael_nop(aelinterpreter& ael, phrase& ph)
 {
 	// [fixme] > do nothing here...
 }
-int randint(int max, int min)
-{
-	srand(static_cast<unsigned int>(time(0)));
-	return (min <= max) ?
-		((rand() % ((max + 1) - min)) + min) :
-		((rand() % ((min + 1) - max)) + max);
-}
-
-void _ael_randint(aelinterpreter& ael, phrase& ph) {
-	if (ph.size() != 4) {
-		std::cout << "Error" << std::endl;
-		return;
-	}
-	long value1 = atol(ael.get_value(ph[1]).c_str());
-	long value2 = atol(ael.get_value(ph[2]).c_str());
-	ael.dictionary[ph[3]] = to_string(randint(value1, value2));
-}
 
 void _ael_loop(aelinterpreter& ael, phrase& ph) {
 	int loop = atoi(ael.get_value(ph[1]).c_str());
@@ -625,6 +648,113 @@ void _ael_if(aelinterpreter& ael, phrase& ph) {
 	}
 }
 
+bool _ael_error_invalid_number_arguments(phrase& ph, int expected) {
+	if (ph.size()-1 != expected) {
+		std::cerr << "Error: " << ph[0] << " takes exactly " << expected << " arguments (" << ph.size()-1 << " given)" << std::endl;
+		return true;
+	}
+	return false;
+}
+
+void _ael_error(std::string msg) {
+	std::cerr << "ERROR: " << msg << std::endl;
+}
+
+
+void _ael_log(phrase& ph) {
+	for (int i=0; i < ph.size(); i++) {
+		std::cout << ph[i] << " ";
+	}
+	std::cout << std::endl;
+}
+
+void trace(std::string m) {
+	std::cout << m << std::endl;
+}
+
+void _ael_stack(aelinterpreter& i, phrase& ph) {
+	// stack loop <var> <code>. (acessible by `stack_value`)
+	// stack destroy <var>.
+	// stack push <var> <value:get_value>.
+	// stack pop <var>.
+	// stack length <var> <destvar>.
+	// stack set <var> <index> <value>.
+	// stack get <var> <index> <destvar>.
+	// stack erase <var> <index>.
+	tok command = ph[1];
+	if (command == "push") {
+		if (_ael_error_invalid_number_arguments(ph, 3)) {
+			return;
+		}
+		i.stack[ph[2]].push_back(i.get_value(ph[3]));
+	}
+	else if (command == "pop") {
+		if (_ael_error_invalid_number_arguments(ph, 2)) {
+			return;
+		}
+		i.stack[ph[2]].pop_back();
+	}
+	else if (command == "destroy") {
+		if (_ael_error_invalid_number_arguments(ph, 2)) {
+			return;
+		}
+		i.stack.erase(ph[2]);
+	}
+	else if (command == "loop") {
+		if (_ael_error_invalid_number_arguments(ph, 3)) {
+			return;
+		}
+		phrase p;
+		i.to_tokens(i.get_value(ph[3]).c_str(), p);
+		for (int stack_i=0; stack_i < i.stack[ph[2]].size(); stack_i++) {
+			i.dictionary["STACK_VALUE"] = i.stack[ph[2]][stack_i];
+			i.interprets(p);
+		}
+	}
+	else if (command == "length") {
+		if (_ael_error_invalid_number_arguments(ph, 3)) {
+			return;
+		}
+		i.dictionary[ph[3]] = to_string(i.stack[ph[2]].size());
+	}
+	else if (command == "set") {
+		if (_ael_error_invalid_number_arguments(ph, 4)) {
+			return;
+		}
+		int index = atoi(i.get_value(ph[3]).c_str());
+		if (index < i.stack[ph[2]].size()) {
+			i.stack[ph[2]][index] = i.get_value(ph[4]);
+		} else {
+			_ael_error("ael set: index out of stack bounds");
+		}
+	}
+	else if (command == "get") {
+		if (_ael_error_invalid_number_arguments(ph, 4)) {
+			return;
+		}
+		int index = atoi(i.get_value(ph[3]).c_str());
+		if (index < i.stack[ph[2]].size()) {
+			i.dictionary[ph[4]] = i.stack[ph[2]][index];
+		} else {
+			_ael_error("ael get: index out of stack bounds");
+		}
+	}
+	else if (command == "erase") {
+		if (_ael_error_invalid_number_arguments(ph, 3)) {
+			return;
+		}
+		int index = atoi(i.get_value(ph[3]).c_str());
+		if (index < i.stack[ph[2]].size()) {
+			i.stack[ph[2]].erase(i.stack[ph[2]].begin() + index);
+		} else {
+			_ael_error("ael stack get: index out of stack bounds");
+		}
+	}
+	else {
+		_ael_error("ael stack: invalid command");
+	}
+}
+
 //[doc] load main functions
 void load_main_ael_functions(aelinterpreter&i)
 {
@@ -642,13 +772,15 @@ void load_main_ael_functions(aelinterpreter&i)
 	i.functions["import"] = _ael_import;
 	i.functions["#"] = _ael_nop;
 	i.functions["+"] = _ael_add_number;
+	i.functions["*"] = _ael_mult_number;
+	i.functions["/"] = _ael_div_number;
 	i.functions[">"] = _ael_if_gt;
 	i.functions["<"] = _ael_if_lt;
 	i.functions["=="] = _ael_if_eq;
 	i.functions["!="] = _ael_if_neq;
-	i.functions["randint"] = _ael_randint;
 	i.functions["loop"] = _ael_loop;
 	i.functions["if"] = _ael_if;
+	i.functions["stack"] = _ael_stack;
 
 	i.dictionary["__ael_version"] = AEL_VERSION;
 
