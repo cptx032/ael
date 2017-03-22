@@ -150,10 +150,11 @@ public:
 	{
 		std::string script = _s;
 		ph.push_back("");
-		uint block_counter = 0;
-		for(uint i=0;i<script.size();i++)
+		int block_counter = 0;
+		char actual_char;
+		for(uint i=0; i < script.size(); i++)
 		{
-			char actual_char = script[i];
+			actual_char = script[i];
 			// se estiver dentro de um bloco
 			if (block_counter > 0)
 			{
@@ -282,7 +283,7 @@ public:
 		}
 	}
 	//[doc] recebe um script completo e executa cada
-	// comando que estiver separado por ';'
+	// comando que estiver separado por '.'
 	void interprets(phrase& ph)
 	{
 		phrase p;
@@ -374,22 +375,6 @@ void _ael_print(aelinterpreter&ael, phrase&ph)
 	{
 		std::cout << ael.get_value(ph[i]);
 	}
-}
-
-//[doc] pass first argument to operational system
-void _ael_sys(aelinterpreter& ael, phrase& ph)
-{
-	if(ph.size()<2)
-	{
-		std::cerr << "Error: " << ph[0] << " takes 1 or more arguments (0 given)" << std::endl;
-		return;
-	}
-	std::string _cmd_final = "";
-	for(uint i=1;i<ph.size();i++)
-	{
-		_cmd_final += ael.get_value(ph[i]) + " ";
-	}
-	system(ael.get_value(_cmd_final).c_str());
 }
 
 //[doc] deletes a variable of interpreter dictionary
@@ -491,76 +476,6 @@ void _ael_div_number(aelinterpreter& ael, phrase& ph)
 	}
 }
 
-void _ael_if_gt(aelinterpreter& ael, phrase& ph) {
-	if (ph.size() != 4) {
-		std::cout << "Error" << std::endl;
-		return;
-	}
-	double value1 = atof(ael.get_value(ph[1]).c_str());
-	double value2 = atof(ael.get_value(ph[2]).c_str());
-	if (value1 > value2) {
-		phrase p;
-		ael.to_tokens(ph[3].c_str(), p);
-		ael.interprets(p);
-	}
-}
-
-void _ael_if_lt(aelinterpreter& ael, phrase& ph) {
-	if (ph.size() != 4) {
-		std::cout << "Error" << std::endl;
-		return;
-	}
-	double value1 = atof(ael.get_value(ph[1]).c_str());
-	double value2 = atof(ael.get_value(ph[2]).c_str());
-	if (value1 < value2) {
-		phrase p;
-		ael.to_tokens(ph[3].c_str(), p);
-		ael.interprets(p);
-	}
-}
-
-void _ael_if_eq(aelinterpreter& ael, phrase& ph) {
-	if (ph.size() != 4) {
-		std::cout << "Error" << std::endl;
-		return;
-	}
-	double value1 = atof(ael.get_value(ph[1]).c_str());
-	double value2 = atof(ael.get_value(ph[2]).c_str());
-	if (value1 == value2) {
-		phrase p;
-		ael.to_tokens(ph[3].c_str(), p);
-		ael.interprets(p);
-	}
-}
-
-void _ael_if_neq(aelinterpreter& ael, phrase& ph) {
-	if (ph.size() != 4) {
-		std::cout << "Error" << std::endl;
-		return;
-	}
-	double value1 = atof(ael.get_value(ph[1]).c_str());
-	double value2 = atof(ael.get_value(ph[2]).c_str());
-	if (value1 != value2) {
-		phrase p;
-		ael.to_tokens(ph[3].c_str(), p);
-		ael.interprets(p);
-	}
-}
-
-// [doc] get environment variable
-void _ael_getenv(aelinterpreter& ael, phrase& ph)
-{
-	if(ph.size()!=3)
-	{
-		std::cerr << "Error: " << ph[0] << " takes exactly 2 arguments (" << ph.size()-1 << " given)" << std::endl;
-		return;
-	}
-	char* env_value = NULL;
-	env_value = getenv(ael.get_value(ph[1]).c_str());
-	if(env_value)
-		ael.dictionary[ph[2]] = env_value;
-}
-
 //[doc] read and then interprets a Ael script file
 void _ael_import(aelinterpreter& ael, phrase& ph)
 {
@@ -578,7 +493,7 @@ void _ael_import(aelinterpreter& ael, phrase& ph)
 // [doc] does nothing
 void _ael_nop(aelinterpreter& ael, phrase& ph)
 {
-	// [fixme] > do nothing here...
+	// does nothing
 }
 
 void _ael_loop(aelinterpreter& ael, phrase& ph) {
@@ -598,7 +513,7 @@ void _ael_if(aelinterpreter& ael, phrase& ph) {
 	// 2.
 	// 		if <var1> <op> <var2> <code> <else> <code>.
 	// TODO: make elifs
-	if (ph.size() != 5 and ph.size() != 7) {
+	if (ph.size() != 5 && ph.size() != 7) {
 		std::cerr << "ERROR" << std::endl;
 		return;
 	}
@@ -633,6 +548,9 @@ void _ael_if(aelinterpreter& ael, phrase& ph) {
 		double v2 = atof(var2.c_str());
 		pass_in_if = v1 <= v2;
 	}
+	else {
+		std::cerr << "ERROR: ael_if: Wrong operator: " << op << std::endl;
+	}
 
 	if (pass_in_if) {
 		phrase p;
@@ -648,9 +566,18 @@ void _ael_if(aelinterpreter& ael, phrase& ph) {
 	}
 }
 
+void _ael_log(phrase& ph) {
+	for (int i=0; i < ph.size(); i++) {
+		std::cout <<  "{" << ph[i] << "} ";
+	}
+	std::cout << std::endl;
+}
+
 bool _ael_error_invalid_number_arguments(phrase& ph, int expected) {
 	if (ph.size()-1 != expected) {
 		std::cerr << "Error: " << ph[0] << " takes exactly " << expected << " arguments (" << ph.size()-1 << " given)" << std::endl;
+		std::cout << "Args:\n\t";
+		_ael_log(ph);
 		return true;
 	}
 	return false;
@@ -660,16 +587,11 @@ void _ael_error(std::string msg) {
 	std::cerr << "ERROR: " << msg << std::endl;
 }
 
-
-void _ael_log(phrase& ph) {
-	for (int i=0; i < ph.size(); i++) {
-		std::cout << ph[i] << " ";
+const bool AEL_VERBOSE = true;
+void ael_trace(std::string m) {
+	if (AEL_VERBOSE) {
+		std::cout << m << std::endl;
 	}
-	std::cout << std::endl;
-}
-
-void trace(std::string m) {
-	std::cout << m << std::endl;
 }
 
 void _ael_stack(aelinterpreter& i, phrase& ph) {
@@ -755,6 +677,17 @@ void _ael_stack(aelinterpreter& i, phrase& ph) {
 	}
 }
 
+// strcat STR1 STR2 (DEST:optional).
+// if DEST is not provided the result is stored in STR1
+void _ael_strcat(aelinterpreter& ael, phrase& ph) {
+	if (ph.size() != 3 && ph.size() != 4) {
+		_ael_error("strcat: wrong numbers of arguments");
+		return;
+	}
+	tok dest = ph.size() == 4 ? ph[3] : ph[1];
+	ael.dictionary[dest] = ael.get_value(ph[1]) + ael.get_value(ph[2]);
+}
+
 //[doc] load main functions
 void load_main_ael_functions(aelinterpreter&i)
 {
@@ -763,24 +696,19 @@ void load_main_ael_functions(aelinterpreter&i)
 	i.functions["input"] = _ael_input;
 	i.functions["run"] = _ael_run;
 	i.functions["exit"] = _ael_exit;
-	i.functions["sys"] = _ael_sys;
 	i.functions["del"] = _ael_del;
 	i.functions["ls"] = _ael_ls;
 	i.functions["lf"] = _ael_lf;
 	i.functions["print"] = _ael_print;
-	i.functions["getenv"] = _ael_getenv;
 	i.functions["import"] = _ael_import;
 	i.functions["#"] = _ael_nop;
 	i.functions["+"] = _ael_add_number;
 	i.functions["*"] = _ael_mult_number;
 	i.functions["/"] = _ael_div_number;
-	i.functions[">"] = _ael_if_gt;
-	i.functions["<"] = _ael_if_lt;
-	i.functions["=="] = _ael_if_eq;
-	i.functions["!="] = _ael_if_neq;
 	i.functions["loop"] = _ael_loop;
 	i.functions["if"] = _ael_if;
 	i.functions["stack"] = _ael_stack;
+	i.functions["strcat"] = _ael_strcat;
 
 	i.dictionary["__ael_version"] = AEL_VERSION;
 
@@ -789,7 +717,7 @@ void load_main_ael_functions(aelinterpreter&i)
 	i.dictionary["\\b"] = "\b";
 	i.dictionary["\\r"] = "\r";
 	i.dictionary["\\a"] = "\a";
-	i.dictionary["__ael_default_function"] = "run";
+	i.dictionary[AEL_DEFAULT_FUNCTION] = "run";
 }
 
 #endif
