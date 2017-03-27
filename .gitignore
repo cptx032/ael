@@ -31,3 +31,7 @@
 *.pyc
 *.pyo
 ael
+
+
+# Java binaries
+*.class
