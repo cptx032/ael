@@ -1,3 +1,5 @@
+package tk.vls2.ael;
+
 import java.util.Map;
 import java.util.HashMap;
 import java.util.ArrayList;
@@ -5,23 +7,8 @@ import java.util.Scanner;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import tk.vls2.ael.*;
 
-interface IAelInterpreter {
-	Map<String, String> get_dictionary();
-	Map<String, ArrayList<String>> get_stack();
-	void to_tokens(String code, ArrayList<String> phrase);
-	String get_value(String key);
-	boolean has_var(String var_identifier);
-	boolean has_stack(String var_identifier);
-	void run_cmd(ArrayList<String> ph);
-	void interprets(ArrayList<String> ph);
-	void ael_log(ArrayList<String> ph);
-	boolean ael_error_invalid_number_arguments(ArrayList<String> ph, int expected);
-}
-
-interface AelFunction {
-	void execute(IAelInterpreter interpreter, ArrayList<String> phrase);
-}
 /***************** AEL FUNCTIONS ********************/
 class AelTrace implements AelFunction {
 	public void execute(IAelInterpreter ael, ArrayList<String> phrase) {
@@ -351,7 +338,8 @@ public class AelInterpreter implements IAelInterpreter {
 
 	public static String get_file_content(String file_path) {
 		String result = "";
-		try (BufferedReader br = new BufferedReader(new FileReader(file_path))) {
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(file_path));
 			String line;
 			while ((line = br.readLine()) != null) {
 				result += line;
