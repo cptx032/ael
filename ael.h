@@ -494,7 +494,11 @@ void _ael_nop(aelinterpreter& ael, phrase& ph)
 	// does nothing
 }
 
+// loop NUMBER CODE.
 void _ael_loop(aelinterpreter& ael, phrase& ph) {
+	if (_ael_error_invalid_number_arguments(ph, 2)) {
+		return;
+	}
 	int loop = atoi(ael.get_value(ph[1]).c_str());
 	phrase p;
 	ael.to_tokens(ael.get_value(ph[2]).c_str(), p);
