@@ -303,14 +303,13 @@ public:
 };
 typedef void(*aelfunction)(aelinterpreter&,phrase&);
 
-//[doc] print each argument in a new line
-void _ael_trace(aelinterpreter&ael,phrase&ph)
+// trace arg1 arg2 argN.
+// no new lines
+void _ael_trace(aelinterpreter& ael, phrase& ph)
 {
-	for(uint i=1;i<ph.size();i++)
-	{
+	for(int i=1; i < ph.size(); i++) {
 		std::cout << ael.get_value(ph[i]) << " ";
 	}
-	std::cout << std::endl;
 }
 
 //[doc] creates a var in interpreter dictionary
@@ -329,19 +328,6 @@ void _ael_set(aelinterpreter&ael, phrase&ph)
 		std::cerr << "Error: set takes 1 or 2 arguments (" << ph.size()-1 << " given)" << std::endl;
 		return;
 	}
-}
-
-//[doc] get user entry from terminal
-void _ael_input(aelinterpreter&ael, phrase&ph)
-{
-	if(ph.size() != 2)
-	{
-		std::cerr << "Error: " << ph[0] << " takes exactly 1 argument (" << ph.size()-1 << " given)" << std::endl;
-		return;
-	}
-	tok I;
-	getline(std::cin, I);
-	ael.dictionary[ph[1]] = I;
 }
 
 //[doc] interprets a string like a script (reflexion)
@@ -583,8 +569,9 @@ bool _ael_error_invalid_number_arguments(phrase& ph, int expected) {
 	return false;
 }
 
-void _ael_error(std::string msg) {
-	std::cerr << "ERROR: " << msg << std::endl;
+void _ael_error(phrase& ph, std::string error) {
+	std::cerr << "ERROR: " << ph[0] << " " << error << ":\n\t";
+	_ael_log(ph);
 }
 
 const bool AEL_VERBOSE = true;
@@ -647,7 +634,7 @@ void _ael_stack(aelinterpreter& i, phrase& ph) {
 		if (index < i.stack[ph[2]].size()) {
 			i.stack[ph[2]][index] = i.get_value(ph[4]);
 		} else {
-			_ael_error("ael set: index out of stack bounds");
+			_ael_error(ph, "index out of stack bounds");
 		}
 	}
 	else if (command == "get") {
@@ -658,7 +645,7 @@ void _ael_stack(aelinterpreter& i, phrase& ph) {
 		if (index < i.stack[ph[2]].size()) {
 			i.dictionary[ph[4]] = i.stack[ph[2]][index];
 		} else {
-			_ael_error("ael get: index out of stack bounds");
+			_ael_error(ph, "index out of stack bounds");
 		}
 	}
 	else if (command == "erase") {
@@ -669,23 +656,12 @@ void _ael_stack(aelinterpreter& i, phrase& ph) {
 		if (index < i.stack[ph[2]].size()) {
 			i.stack[ph[2]].erase(i.stack[ph[2]].begin() + index);
 		} else {
-			_ael_error("ael stack get: index out of stack bounds");
+			_ael_error(ph, "index out of stack bounds");
 		}
 	}
 	else {
-		_ael_error("ael stack: invalid command");
+		_ael_error(ph, "invalid command");
 	}
-}
-
-// strcat STR1 STR2 (DEST:optional).
-// if DEST is not provided the result is stored in STR1
-void _ael_strcat(aelinterpreter& ael, phrase& ph) {
-	if (ph.size() != 3 && ph.size() != 4) {
-		_ael_error("strcat: wrong numbers of arguments");
-		return;
-	}
-	tok dest = ph.size() == 4 ? ph[3] : ph[1];
-	ael.dictionary[dest] = ael.get_value(ph[1]) + ael.get_value(ph[2]);
 }
 
 //[doc] load main functions
@@ -693,7 +669,6 @@ void load_main_ael_functions(aelinterpreter&i)
 {
 	i.functions["trace"] = _ael_trace;
 	i.functions["set"] = _ael_set;
-	i.functions["input"] = _ael_input;
 	i.functions["run"] = _ael_run;
 	i.functions["exit"] = _ael_exit;
 	i.functions["del"] = _ael_del;
@@ -708,7 +683,6 @@ void load_main_ael_functions(aelinterpreter&i)
 	i.functions["loop"] = _ael_loop;
 	i.functions["if"] = _ael_if;
 	i.functions["stack"] = _ael_stack;
-	i.functions["strcat"] = _ael_strcat;
 
 	i.dictionary["__ael_version"] = AEL_VERSION;
 

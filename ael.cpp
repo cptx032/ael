@@ -3,6 +3,8 @@ Author: Willie Lawrence - cptx032@gmail.com
 */
 
 #include "ael.h"
+#include "ael_io.h"
+#include "ael_string.h"
 
 std::vector<tok> args;
 
@@ -48,6 +50,8 @@ aelinterpreter i;
 int main(int argc, char* argv[])
 {
 	load_main_ael_functions(i);
+	load_io_functions(i);
+	load_string_functions(i);
 	for(int i=0;i<argc;i++)
 	{
 		args.push_back(argv[i]);
