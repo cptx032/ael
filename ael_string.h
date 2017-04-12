@@ -26,9 +26,35 @@ void _ael_chr(aelinterpreter& ael, phrase& ph) {
 	ael.dictionary[ph[2]] = _result;
 }
 
+// strlen STR DEST
+void _ael_strlen(aelinterpreter& ael, phrase& ph) {
+	if (_ael_error_invalid_number_arguments(ph, 2)) {
+		return;
+	}
+	ael.dictionary[ph[2]] = to_string( ael.get_value(ph[1]).length() );
+}
+
+// strindex STR INDEX DEST
+void _ael_strindex(aelinterpreter& ael, phrase& ph) {
+	if (_ael_error_invalid_number_arguments(ph, 3)) {
+		return;
+	}
+	std::string _str = ael.get_value(ph[1]);
+	int index = atoi(ael.get_value(ph[2]).c_str());
+	if (index >= _str.length()) {
+		_ael_error(ph, "index out of string bounds");
+		return;
+	}
+	std::string result = "";
+	result += _str[index];
+	ael.dictionary[ph[3]] = result;
+}
+
 void load_string_functions(aelinterpreter& ael) {
 	ael.functions["strcat"] = _ael_strcat;
 	ael.functions["chr"] = _ael_chr;
+	ael.functions["strlen"] = _ael_strlen;
+	ael.functions["strindex"] = _ael_strindex;
 }
 
 #endif
