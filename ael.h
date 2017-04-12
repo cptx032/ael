@@ -6,7 +6,6 @@ Author: Willie Lawrence - cptx032@gmail.com
 #define AEL_H
 
 #include <iostream>
-#include <stdlib.h> // exit
 #include <sstream> // cast double to string
 #include <vector>
 #include <unordered_map> // hash_map
@@ -366,15 +365,6 @@ void _ael_run(aelinterpreter&ael, phrase&ph)
 	ael.interprets(p);
 }
 
-//[doc] quit of application
-void _ael_exit(aelinterpreter& ael, phrase& ph)
-{
-	if(ph.size() > 1)
-		exit(atoi(ph[1].c_str()));
-	else
-		exit(0);
-}
-
 //[doc] print each argument one after other (without
 // white spaces)
 void _ael_print(aelinterpreter&ael, phrase&ph)
@@ -671,7 +661,6 @@ void load_main_ael_functions(aelinterpreter&i)
 	i.functions["trace"] = _ael_trace;
 	i.functions["set"] = _ael_set;
 	i.functions["run"] = _ael_run;
-	i.functions["exit"] = _ael_exit;
 	i.functions["del"] = _ael_del;
 	i.functions["ls"] = _ael_ls;
 	i.functions["lf"] = _ael_lf;
@@ -687,11 +676,6 @@ void load_main_ael_functions(aelinterpreter&i)
 
 	i.dictionary["__ael_version"] = AEL_VERSION;
 
-	i.dictionary["\\n"] = "\n";
-	i.dictionary["\\t"] = "\t";
-	i.dictionary["\\b"] = "\b";
-	i.dictionary["\\r"] = "\r";
-	i.dictionary["\\a"] = "\a";
 	i.dictionary[AEL_DEFAULT_FUNCTION] = "run";
 }
 
