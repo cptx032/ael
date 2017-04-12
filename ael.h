@@ -303,6 +303,28 @@ public:
 };
 typedef void(*aelfunction)(aelinterpreter&,phrase&);
 
+void _ael_log(phrase& ph) {
+	for (int i=0; i < ph.size(); i++) {
+		std::cout <<  "{" << ph[i] << "} ";
+	}
+	std::cout << std::endl;
+}
+
+bool _ael_error_invalid_number_arguments(phrase& ph, int expected) {
+	if (ph.size()-1 != expected) {
+		std::cerr << "Error: " << ph[0] << " takes exactly " << expected << " arguments (" << ph.size()-1 << " given)" << std::endl;
+		std::cout << "Args:\n\t";
+		_ael_log(ph);
+		return true;
+	}
+	return false;
+}
+
+void _ael_error(phrase& ph, std::string error) {
+	std::cerr << "Error: " << ph[0] << " " << error << "\nArgs:\n\t";
+	_ael_log(ph);
+}
+
 // trace arg1 arg2 argN.
 // no new lines
 void _ael_trace(aelinterpreter& ael, phrase& ph)
@@ -504,7 +526,7 @@ void _ael_if(aelinterpreter& ael, phrase& ph) {
 		return;
 	}
 	std::string var1 = ael.get_value(ph[1]);
-	std::string op = ael.get_value(ph[2]);
+	std::string op = ph[2];
 	std::string var2 = ael.get_value(ph[3]);
 
 	bool pass_in_if = false;
@@ -535,7 +557,8 @@ void _ael_if(aelinterpreter& ael, phrase& ph) {
 		pass_in_if = v1 <= v2;
 	}
 	else {
-		std::cerr << "ERROR: ael_if: Wrong operator: " << op << std::endl;
+		_ael_error(ph, "wrong operator");
+		return;
 	}
 
 	if (pass_in_if) {
@@ -550,28 +573,6 @@ void _ael_if(aelinterpreter& ael, phrase& ph) {
 			ael.interprets(p);
 		}
 	}
-}
-
-void _ael_log(phrase& ph) {
-	for (int i=0; i < ph.size(); i++) {
-		std::cout <<  "{" << ph[i] << "} ";
-	}
-	std::cout << std::endl;
-}
-
-bool _ael_error_invalid_number_arguments(phrase& ph, int expected) {
-	if (ph.size()-1 != expected) {
-		std::cerr << "Error: " << ph[0] << " takes exactly " << expected << " arguments (" << ph.size()-1 << " given)" << std::endl;
-		std::cout << "Args:\n\t";
-		_ael_log(ph);
-		return true;
-	}
-	return false;
-}
-
-void _ael_error(phrase& ph, std::string error) {
-	std::cerr << "ERROR: " << ph[0] << " " << error << ":\n\t";
-	_ael_log(ph);
 }
 
 const bool AEL_VERBOSE = true;
