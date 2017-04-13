@@ -389,33 +389,25 @@ void _ael_del(aelinterpreter& ael, phrase& ph)
 	}
 }
 
-//[doc] list all variables
-void _ael_ls(aelinterpreter& ael, phrase& ph)
+// dump_functions
+void _ael_dump_functions(aelinterpreter& ael, phrase& ph)
 {
-	aeldict::iterator it = ael.dictionary.begin();
-	while(it != ael.dictionary.end())
+	std::cout << "Functions:\n\t";
+	std::unordered_map<tok, void(*)(aelinterpreter&, phrase&)>::iterator it = ael.functions.begin();
+	while(it != ael.functions.end())
 	{
-		if(it->first[0] != '_')
-			std::cout << "'" << it->first << "' ";
-		else
-		{
-			if(it->first.length() >= 2 && it->first[1] != '_')
-			{
-				std::cout << "'" << it->first << "' ";
-			}
-		}
+		std::cout << it->first << " ";
 		it++;
 	}
 	std::cout << std::endl;
 }
 
-//[doc] list all functions
-void _ael_lf(aelinterpreter& ael, phrase& ph)
-{
-	std::unordered_map<tok, void(*)(aelinterpreter&, phrase&)>::iterator it = ael.functions.begin();
-	while(it != ael.functions.end())
-	{
-		std::cout << "'" << it->first << "' ";
+// dump_var
+void _ael_dump_var(aelinterpreter& ael, phrase& ph) {
+	std::cout << "Variables:\n\t";
+	aeldict::iterator it = ael.dictionary.begin();
+	while(it != ael.dictionary.end()) {
+		std::cout << it->first << " ";
 		it++;
 	}
 	std::cout << std::endl;
@@ -666,8 +658,8 @@ void load_main_ael_functions(aelinterpreter&i)
 	i.functions["set"] = _ael_set;
 	i.functions["run"] = _ael_run;
 	i.functions["del"] = _ael_del;
-	i.functions["ls"] = _ael_ls;
-	i.functions["lf"] = _ael_lf;
+	i.functions["dump_functions"] = _ael_dump_functions;
+	i.functions["dump_var"] = _ael_dump_var;
 	i.functions["print"] = _ael_print;
 	i.functions["import"] = _ael_import;
 	i.functions["#"] = _ael_nop;
