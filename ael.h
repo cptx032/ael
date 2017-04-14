@@ -390,27 +390,21 @@ void _ael_del(aelinterpreter& ael, phrase& ph)
 }
 
 // dump_functions
-void _ael_dump_functions(aelinterpreter& ael, phrase& ph)
+void _ael_dump(aelinterpreter& ael, phrase& ph)
 {
-	std::cout << "Functions:\n\t";
+	std::cout << "Functions:\n";
 	std::unordered_map<tok, void(*)(aelinterpreter&, phrase&)>::iterator it = ael.functions.begin();
 	while(it != ael.functions.end())
 	{
-		std::cout << it->first << " ";
+		std::cout << "\t" << it->first << std::endl;
 		it++;
 	}
-	std::cout << std::endl;
-}
-
-// dump_var
-void _ael_dump_var(aelinterpreter& ael, phrase& ph) {
-	std::cout << "Variables:\n\t";
-	aeldict::iterator it = ael.dictionary.begin();
-	while(it != ael.dictionary.end()) {
-		std::cout << it->first << " ";
-		it++;
+	std::cout << "\nVariables:\n";
+	aeldict::iterator itv = ael.dictionary.begin();
+	while(itv != ael.dictionary.end()) {
+		std::cout << "\t" << itv->first << std::endl;
+		itv++;
 	}
-	std::cout << std::endl;
 }
 
 void _ael_add_number(aelinterpreter& ael, phrase& ph)
@@ -658,8 +652,7 @@ void load_main_ael_functions(aelinterpreter&i)
 	i.functions["set"] = _ael_set;
 	i.functions["run"] = _ael_run;
 	i.functions["del"] = _ael_del;
-	i.functions["dump_functions"] = _ael_dump_functions;
-	i.functions["dump_var"] = _ael_dump_var;
+	i.functions["dump"] = _ael_dump;
 	i.functions["print"] = _ael_print;
 	i.functions["import"] = _ael_import;
 	i.functions["#"] = _ael_nop;
