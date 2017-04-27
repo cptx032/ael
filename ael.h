@@ -32,47 +32,6 @@ bool is_a_blank_char(char _c)
 	return false;
 }
 
-// [doc] Split a string by _c char argument
-phrase split(tok _entry, char _c)
-{
-	phrase _result;
-	_result.push_back("");
-	for(uint i=0;i<_entry.length();i++)
-	{
-		if(_entry[i] == _c)
-			_result.push_back("");
-		else
-			_result[_result.size()-1] += _entry[i];
-	}
-	return _result;
-}
-
-//[doc] replaces a char by another in _entry
-tok replace(tok _entry, char _c, char _r)
-{
-	tok _result = "";
-	for(uint i=0;i<_entry.length();i++)
-	{
-		if(_entry[i] == _c)
-			_result += _r;
-		else
-			_result += _entry[i];
-	}
-	return _result;
-}
-
-// [doc] Join two file paths
-tok join(tok _dirname, tok _filename)
-{
-	_dirname = replace(_dirname, '\\', '/');
-	_filename = replace(_filename, '\\', '/');
-	if(_dirname.back() != '/')
-		_dirname += '/';
-	if(_filename[0] == '/')
-		_filename = _filename.substr(1,_filename.length()-1); // cut the first char
-	return _dirname + _filename; // path/file.ext
-}
-
 //[doc] transforms float to string
 tok to_string(double _v)
 {
@@ -82,53 +41,26 @@ tok to_string(double _v)
 }
 
 //[doc] returns the content of a text file
-char* get_file_content(const char* file_path)
+std::string get_file_content(const char* file_path)
 {
 	std::string contents;
 	std::string line;
 	std::ifstream script_file(file_path);
-
-	if(!script_file.is_open())
-	{
-		char* _ael_path = NULL;
-		_ael_path = getenv((char*)"AEL_PATH");
-		if(_ael_path == NULL)
-		{
-			std::cerr << "Environment variable not found...please reinstall Ael" << std::endl;
-			abort();
-		}
-		phrase _paths = split(_ael_path, ';');
-		for(uint i=0;i<_paths.size();i++)
-		{
-			tok _possible_path = join(_paths[i], file_path);
-			script_file.open(_possible_path.c_str(), std::ifstream::in);
-			if(script_file.is_open())
-				break;
-		}
-		if(!script_file.is_open())
-		{
-			std::cerr << "Script '" << file_path << "' not found!" << std::endl;
-			return (char*)"";
-		}
-	}
 	
 	if(script_file.is_open())
 	{
-		while (getline(script_file, line))
-		{
-			if(line[0] != '#') // [fixme] if begins with space it will be ignored
-			{
+		while (getline(script_file, line)) {
+			if (line[0] != '#') {
 				contents += line + '\n';
 			}
 		}
 		script_file.close();
 	}
-	else
-	{
+	else {
 		std::cerr << "'" << file_path << "'" << " file not found" << std::endl;
 		exit(-1);
 	}
-	return (char*)contents.c_str();
+	return contents;
 }
 
 class aelinterpreter
@@ -354,9 +286,7 @@ void _ael_set(aelinterpreter&ael, phrase&ph)
 //[doc] interprets a string like a script (reflexion)
 void _ael_run(aelinterpreter&ael, phrase&ph)
 {
-	if(ph.size()!=2)
-	{
-		std::cerr << "Error: " << ph[0] << " takes exactly 1 argument (" << ph.size()-1 << " given)" << std::endl;
+	if (_ael_error_invalid_number_arguments(ph, 1)) {
 		return;
 	}
 	std::string content = ael.get_value(ph[1]).c_str();
@@ -645,6 +575,16 @@ void _ael_stack(aelinterpreter& i, phrase& ph) {
 	}
 }
 
+// load FILE_NAME DEST_VAR
+// load a file and put the content inside 'DEST_VAR'
+void _ael_load(aelinterpreter& i, phrase& ph) {
+	if (_ael_error_invalid_number_arguments(ph, 2)) {
+		return;
+	}
+	std::string content = get_file_content(i.get_value(ph[1]).c_str());
+	i.dictionary[ph[2]] = content;
+}
+
 //[doc] load main functions
 void load_main_ael_functions(aelinterpreter&i)
 {
@@ -662,10 +602,15 @@ void load_main_ael_functions(aelinterpreter&i)
 	i.functions["loop"] = _ael_loop;
 	i.functions["if"] = _ael_if;
 	i.functions["stack"] = _ael_stack;
-
+	i.functions["load"] = _ael_load;
 	i.dictionary["__ael_version"] = AEL_VERSION;
-
 	i.dictionary[AEL_DEFAULT_FUNCTION] = "run";
 }
 
 #endif
+
+
+/*
+fixme:
+	+ in all places that uses get_file_content verify if the result is NULL
+*/

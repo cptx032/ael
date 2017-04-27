@@ -107,6 +107,25 @@ aelinterpreter.prototype.interprets = function(phrase) {
 	}
 };
 
+function _ael_log(phrase) {
+	let result = '';
+	for(let i=0; i < phrase.length; i++) {
+		result += '{' + phrase[i] + '} ';
+	}
+	result += '\n';
+	console.log(result);
+}
+
+function _ael_error_invalid_number_arguments(phrase, expected) {
+	if (phrase.length-1 != expected) {
+		console.error('Error: ' + phrase[0] + ' takes excatly ' + expected.toString() + ' arguments (' + (phrase.length-1).toString() + ' given )');
+		console.log('Args:\n\t');
+		_ael_log(phrase);
+		return true;
+	}
+	return false;
+}
+
 function _ael_trace(ael, phrase) {
 	let s = '';
 	for (let i=1; i<phrase.length; i++) {
@@ -128,19 +147,13 @@ function _ael_set(ael, phrase) {
 }
 
 function _ael_run(ael, phrase) {
-	if (phrase.length != 2) {
-		console.error('Error: run takes excatly 1 argument');
+	if (_ael_error_invalid_number_arguments(phrase, 1)) {
 		return;
 	}
 	let content = ael.get_value(phrase[1]);
 	let p = [];
 	ael.to_tokens(content, p);
 	ael.interprets(p);
-}
-
-function _ael_exit(ael, phrase) {
-	// does nothing because we are in a browser
-	// we can redirects to a page
 }
 
 function _ael_del(ael, phrase) {
@@ -153,12 +166,17 @@ function _ael_del(ael, phrase) {
 	}
 }
 
-function _ael_ls(ael, phrase) {
-	// TODO
-}
-
-function _ael_lf(ael, phrase) {
-	// TODO
+function _ael_dump(ael, phrase) {
+	let result = 'Functions:\n';
+	let funcs = Object.keys(ael.functions);
+	for (let i=0; i < funcs.length; i++) {
+		result += '\t' + funcs[i] + '\n';
+	}
+	result += '\nVariables:\n';
+	let dict_keys = Object.keys(ael.dictionary);
+	for (let i=0; i < dict_keys.length; i++) {
+		result += '\t' + dict_keys[i] + '\n';
+	}
 }
 
 function _ael_nop(ael, phrase) {
@@ -248,6 +266,9 @@ function _ael_if(ael, phrase) {
 	else if (op == '<=') {
 		pass_in_if = parseFloat(var1) <= parseFloat(var2);
 	}
+	else {
+		console.error('if: Wrong operator', op);
+	}
 
 	if (pass_in_if) {
 		let p = [];
@@ -261,14 +282,6 @@ function _ael_if(ael, phrase) {
 			ael.interprets(p);
 		}
 	}
-}
-
-function _ael_error_invalid_number_arguments(phrase, expected) {
-	if (phrase.length-1 != expected) {
-		console.error('Error: ' + phrase[0] + ' takes excatly ' + expected.toString() + ' arguments (' + (phrase.length-1).toString() + ' given )');
-		return true;
-	}
-	return false;
 }
 
 function _ael_stack(ael, phrase) {
@@ -367,30 +380,12 @@ function _ael_strcat(ael, phrase) {
 	ael.dictionary[dest] = ael.get_value(phrase[1]) + ael.get_value(phrase[2]);
 }
 
-function lerp(a, b, x) {
-	return a + ((b-a) * x);
-}
-
-function _ael_randint(ael, phrase) {
-	if (phrase.length != 4) {
-		console.error('ael randint error: wrong numbers of arguments', phrase);
-		return;
-	}
-	let _min = parseInt(ael.get_value(phrase[1]));
-	let _max = parseInt(ael.get_value(phrase[2]));
-	ael.dictionary[phrase[3]] = lerp(_min, _max, Math.random());
-}
-
 function load_main_ael_functions(ael) {
 	ael.functions['trace'] = _ael_trace;
 	ael.functions["set"] = _ael_set;
 	ael.functions['run'] = _ael_run;
-	ael.functions['exit'] = _ael_exit;
 	ael.functions['del'] = _ael_del;
-	ael.functions['ls'] = _ael_ls;
-	ael.functions['lf'] = _ael_lf;
-	// ael.functions["print"] = _ael_print;
-	// ael.functions["import"] = _ael_import;
+	ael.functions['dump'] = _ael_dump;
 	ael.functions['#'] = _ael_nop;
 	ael.functions['+'] = _ael_add_number;
 	ael.functions['*'] = _ael_mult_number;
@@ -399,14 +394,6 @@ function load_main_ael_functions(ael) {
 	ael.functions['if'] = _ael_if;
 	ael.functions['stack'] = _ael_stack;
 	ael.functions['strcat'] = _ael_strcat;
-	ael.functions['randint'] = _ael_randint;
-
 	ael.dictionary['__ael_version'] = AEL_VERSION;
-
-	ael.dictionary['\\n'] = '\n';
-	ael.dictionary['\\t'] = '\t';
-	ael.dictionary['\\b'] = '\b';
-	ael.dictionary['\\r'] = '\r';
-	ael.dictionary['\\a'] = '\a';
 	ael.dictionary[AEL_DEFAULT_FUNCTION] = 'run';
 }
