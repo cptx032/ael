@@ -1,3 +1,10 @@
-trace Type EXIT to quit.
+set count 1.
 
-trace ok.
+set interprets {
+	trace >>.
+	input command.
+	run command.
+	run interprets.
+}.
+
+run interprets.

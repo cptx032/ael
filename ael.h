@@ -66,17 +66,24 @@ std::string get_file_content(const char* file_path)
 class aelinterpreter
 {
 public:
-	// dicionário chave: string valor: string > guarda as variáveis
+	// stores the variables
 	aeldict dictionary;
+
+	// defining "aelfunction": a function-type to ael-functions
+	// each ael-function must return void and receive the interpreter
+	// followed by a phrase
 	typedef void(*aelfunction)(aelinterpreter&,phrase&);
-	// dicionário cuja chave é o nome da função e o valor é um ponteiro para função
+
+	// stores the ael functions
 	std::unordered_map<tok, aelfunction> functions;
-	// ael lists
+
+	// stores the ael lists, called here by "stack"
 	std::unordered_map<tok, string_stack> stack;
 
 	aelinterpreter(){}
-	//[doc] traduz um script para tokens e adiciona
-	// numa frase
+
+	// gets a string and parses it. the result of this process is a phrase
+	// the phrase must be passed to to_tokens function
 	void to_tokens(const char* _s, phrase& ph)
 	{
 		std::string script = _s;
@@ -159,6 +166,9 @@ public:
 			ph.erase(ph.end());
 		}
 	}
+
+	// return the value in variables dictionary
+	// if value is not found the own key is returned
 	tok get_value(tok key)
 	{
 		// if key starts with '"'
@@ -169,6 +179,7 @@ public:
 
 		if(this->has_var(key))
 		{
+			// fixme: verificar se ainda há necessidade disso
 			if(this->dictionary[key][0] == '{')
 			{
 				return this->get_value(this->dictionary[key]);
@@ -182,16 +193,18 @@ public:
 		return key;
 	}
 
+	// returns true if a variable exists in variables dictionary
 	bool has_var(tok var_identifier) {
 		return this->dictionary.find(var_identifier) != this->dictionary.end();
 	}
 
+	// returns true if a variable exists in stack dictionary
 	bool has_stack(tok var_identifier) {
 		return this->stack.find(var_identifier) != this->stack.end();
 	}
-	//[doc] executa um único comando identificado pelo
-	// primeiro token passando como argumento todos
-	// os outros tokens (inclusive o primeiro argumento)
+
+	// runs a ael-function identified by the first token passing
+	// all phrase as argument
 	void run_cmd(phrase& ph)
 	{
 		std::unordered_map<tok, aelfunction>::const_iterator got = this->functions.find(ph[0]);
@@ -213,8 +226,8 @@ public:
 			// std::cerr << "Can't find '" << ph[0] << "' function" << std::endl;
 		}
 	}
-	//[doc] recebe um script completo e executa cada
-	// comando que estiver separado por '.'
+
+	// receives a complete script and runs each command splitted by "." char
 	void interprets(phrase& ph)
 	{
 		phrase p;
@@ -232,6 +245,7 @@ public:
 		}
 	}
 };
+
 typedef void(*aelfunction)(aelinterpreter&,phrase&);
 
 void _ael_log(phrase& ph) {
@@ -575,14 +589,23 @@ void _ael_stack(aelinterpreter& i, phrase& ph) {
 	}
 }
 
-// load FILE_NAME DEST_VAR
+// load FILE_NAME DEST_VAR FILE_NAME2 DEST_VAR2 ...
 // load a file and put the content inside 'DEST_VAR'
-void _ael_load(aelinterpreter& i, phrase& ph) {
-	if (_ael_error_invalid_number_arguments(ph, 2)) {
+void _ael_load(aelinterpreter& ael, phrase& ph) {
+	if (ph.size() < 4) {
+		_ael_error(ph, "_ael_load: Invalid number of arguments less than 4");
 		return;
 	}
-	std::string content = get_file_content(i.get_value(ph[1]).c_str());
-	i.dictionary[ph[2]] = content;
+	if (((ph.size()-2) % 2) != 0) {
+		_ael_error(ph, "_ael_load: Invalid number of arguments. not divisible by 2");
+		return;
+	}
+	for (int i=1; i<ph.size() - 1; i+=2) {
+		ael.dictionary[ph[i+1]] = get_file_content(ph[i].c_str());
+	}
+	phrase l;
+	ael.to_tokens(ph[ph.size()-1].c_str(), l);
+	ael.interprets(l);
 }
 
 //[doc] load main functions
