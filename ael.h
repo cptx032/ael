@@ -25,6 +25,7 @@ typedef aeldict(*aelnamefunction)(void);
 
 typedef std::vector<tok> string_stack;
 
+
 // used to print a phrase in terminal
 void _ael_log(phrase &ph)
 {
@@ -40,6 +41,32 @@ void _ael_error(phrase &ph, std::string error)
 {
 	std::cerr << "Error: " << ph[0] << " " << error << "\nArgs:\n\t";
 	_ael_log(ph);
+}
+
+bool _ael_error_invalid_number_arguments_exact(phrase &ph, int expected)
+{
+	if (ph.size() - 1 != expected)
+	{
+		// fixme: use _ael_error
+		std::cerr << "Error: " << ph[0] << " takes exactly " << expected << " arguments (" << ph.size()-1 << " given)" << std::endl;
+		std::cout << "Args:\n\t";
+		_ael_log(ph);
+		return true;
+	}
+	return false;
+}
+
+bool _ael_error_invalid_number_arguments_minimum(phrase &ph, int min_expected)
+{
+	if ((ph.size() - 1) < min_expected)
+	{
+		// fixme: use _ael_error
+		std::cerr << "Error: " << ph[0] << " takes at least " << min_expected << " arguments (" << ph.size()-1 << " given)" << std::endl;
+		std::cout << "Args:\n\t";
+		_ael_log(ph);
+		return true;
+	}
+	return false;
 }
 
 bool is_a_blank_char(char _c)
@@ -284,18 +311,6 @@ public:
 
 typedef void(*aelfunction)(aelinterpreter&, phrase&);
 
-bool _ael_error_invalid_number_arguments(phrase &ph, int expected)
-{
-	if (ph.size() - 1 != expected)
-	{
-		std::cerr << "Error: " << ph[0] << " takes exactly " << expected << " arguments (" << ph.size()-1 << " given)" << std::endl;
-		std::cout << "Args:\n\t";
-		_ael_log(ph);
-		return true;
-	}
-	return false;
-}
-
 // trace arg1 arg2 argN.
 // no new lines
 void _ael_trace(aelinterpreter &ael, phrase &ph)
@@ -328,7 +343,7 @@ void _ael_set(aelinterpreter &ael, phrase &ph)
 // interprets a string like a script (reflexion)
 void _ael_run(aelinterpreter &ael, phrase &ph)
 {
-	if (_ael_error_invalid_number_arguments(ph, 1))
+	if (_ael_error_invalid_number_arguments_exact(ph, 1))
 	{
 		return;
 	}
@@ -350,10 +365,8 @@ void _ael_print(aelinterpreter &ael, phrase &ph)
 // deletes one or more variables of interpreter dictionary
 void _ael_del(aelinterpreter &ael, phrase &ph)
 {
-	if(ph.size()==1)
+	if(_ael_error_invalid_number_arguments_minimum(ph, 1))
 	{
-		// fixme: better error formating
-		std::cerr << "Error: " << ph[0] << " takes 1 or more arguments (0 given)" << std::endl;
 		return;
 	}
 	for(int i=1;i < ph.size(); i++)
@@ -446,7 +459,7 @@ void _ael_div_number(aelinterpreter &ael, phrase &ph)
 // read and then interprets a Ael script file
 void _ael_import(aelinterpreter &ael, phrase &ph)
 {
-	if (_ael_error_invalid_number_arguments(ph, 1))
+	if (_ael_error_invalid_number_arguments_exact(ph, 1))
 	{
 		return;
 	}
@@ -464,7 +477,7 @@ void _ael_nop(aelinterpreter &ael, phrase &ph)
 // loop NUMBER CODE.
 void _ael_loop(aelinterpreter &ael, phrase &ph)
 {
-	if (_ael_error_invalid_number_arguments(ph, 2))
+	if (_ael_error_invalid_number_arguments_exact(ph, 2))
 	{
 		return;
 	}
@@ -561,73 +574,82 @@ void ael_trace(std::string m)
 	}
 }
 
-void _ael_stack(aelinterpreter &i, phrase &ph)
+// this function is called by 'instance' of stack
+void _ael_stack_variable(aelinterpreter &i, phrase &ph)
 {
-	// stack loop <var> <code>. (acessible by `stack_value`)
-	// stack destroy <var>.
-	// stack push <var> <value:get_value>.
-	// stack pop <var>.
-	// stack length <var> <destvar>.
-	// stack set <var> <index> <value>.
-	// stack get <var> <index> <destvar>.
-	// stack erase <var> <index>.
+	// stack loop <code>. (acessible by `@item`)
+	// stack clear.
+	// stack push <value:get_value>.
+	// stack pop.
+	// stack length <destvar>.
+	// stack set <index> <value>.
+	// stack get <index> <destvar>.
+	// stack erase <index>.
+	if(_ael_error_invalid_number_arguments_minimum(ph, 1))
+	{
+		return;
+	}
+	tok stack_name = ph[0];
 	tok command = ph[1];
 	if (command == "push")
 	{
-		if (_ael_error_invalid_number_arguments(ph, 3))
+		if (_ael_error_invalid_number_arguments_exact(ph, 2))
 		{
 			return;
 		}
-		i.stack[ph[2]].push_back(i.get_value(ph[3]));
+		i.stack[stack_name].push_back(i.get_value(ph[2]));
 	}
 	else if (command == "pop")
 	{
-		if (_ael_error_invalid_number_arguments(ph, 2))
+		if (_ael_error_invalid_number_arguments_exact(ph, 1))
 		{
 			return;
 		}
-		i.stack[ph[2]].pop_back();
+		if (i.stack[stack_name].size() > 0)
+		{
+			i.stack[stack_name].pop_back();
+		}
 	}
-	else if (command == "destroy")
+	else if (command == "clear")
 	{
-		if (_ael_error_invalid_number_arguments(ph, 2))
+		if (_ael_error_invalid_number_arguments_exact(ph, 1))
 		{
 			return;
 		}
-		i.stack.erase(ph[2]);
+		i.stack.erase(stack_name);
 	}
 	else if (command == "loop")
 	{
-		if (_ael_error_invalid_number_arguments(ph, 3))
+		if (_ael_error_invalid_number_arguments_exact(ph, 2))
 		{
 			return;
 		}
 		phrase p;
-		i.to_tokens(i.get_value(ph[3]).c_str(), p);
-		for (int stack_i=0; stack_i < i.stack[ph[2]].size(); stack_i++)
+		i.to_tokens(i.get_value(ph[2]).c_str(), p);
+		for (int stack_i=0; stack_i < i.stack[stack_name].size(); stack_i++)
 		{
-			i.dictionary["STACK_VALUE"] = i.stack[ph[2]][stack_i];
+			i.dictionary["@item"] = i.stack[stack_name][stack_i];
 			i.interprets(p);
 		}
 	}
 	else if (command == "length")
 	{
-		if (_ael_error_invalid_number_arguments(ph, 3))
+		if (_ael_error_invalid_number_arguments_exact(ph, 2))
 		{
 			return;
 		}
-		i.dictionary[ph[3]] = to_string(i.stack[ph[2]].size());
+		i.dictionary[ph[2]] = to_string(i.stack[stack_name].size());
 	}
 	else if (command == "set")
 	{
-		if (_ael_error_invalid_number_arguments(ph, 4))
+		if (_ael_error_invalid_number_arguments_exact(ph, 3))
 		{
 			return;
 		}
-		int index = atoi(i.get_value(ph[3]).c_str());
-		if (index < i.stack[ph[2]].size())
+		int index = atoi(i.get_value(ph[2]).c_str());
+		if (index < i.stack[stack_name].size())
 		{
-			i.stack[ph[2]][index] = i.get_value(ph[4]);
+			i.stack[stack_name][index] = i.get_value(ph[3]);
 		}
 		else
 		{
@@ -636,14 +658,14 @@ void _ael_stack(aelinterpreter &i, phrase &ph)
 	}
 	else if (command == "get")
 	{
-		if (_ael_error_invalid_number_arguments(ph, 4))
+		if (_ael_error_invalid_number_arguments_exact(ph, 3))
 		{
 			return;
 		}
-		int index = atoi(i.get_value(ph[3]).c_str());
-		if (index < i.stack[ph[2]].size())
+		int index = atoi(i.get_value(ph[2]).c_str());
+		if (index < i.stack[stack_name].size())
 		{
-			i.dictionary[ph[4]] = i.stack[ph[2]][index];
+			i.dictionary[ph[3]] = i.stack[stack_name][index];
 		}
 		else
 		{
@@ -652,14 +674,14 @@ void _ael_stack(aelinterpreter &i, phrase &ph)
 	}
 	else if (command == "erase")
 	{
-		if (_ael_error_invalid_number_arguments(ph, 3))
+		if (_ael_error_invalid_number_arguments_exact(ph, 2))
 		{
 			return;
 		}
-		int index = atoi(i.get_value(ph[3]).c_str());
-		if (index < i.stack[ph[2]].size())
+		int index = atoi(i.get_value(ph[2]).c_str());
+		if (index < i.stack[stack_name].size())
 		{
-			i.stack[ph[2]].erase(i.stack[ph[2]].begin() + index);
+			i.stack[stack_name].erase(i.stack[stack_name].begin() + index);
 		}
 		else
 		{
@@ -670,6 +692,16 @@ void _ael_stack(aelinterpreter &i, phrase &ph)
 	{
 		_ael_error(ph, "invalid command");
 	}
+}
+
+void _ael_stack(aelinterpreter &i, phrase &ph)
+{
+	if (_ael_error_invalid_number_arguments_exact(ph, 1))
+	{
+		return;
+	}
+	i.functions[ph[1]] = _ael_stack_variable;
+
 }
 
 // load FILE_NAME DEST_VAR FILE_NAME2 DEST_VAR2 ...
