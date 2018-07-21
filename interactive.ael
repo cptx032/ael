@@ -1,5 +1,3 @@
-set count 1.
-
 set interprets {
 	trace >>.
 	input command.

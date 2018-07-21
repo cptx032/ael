@@ -12,10 +12,12 @@ std::vector<tok> args;
 // passado nos parametros
 bool args_contains(std::string key)
 {
-	for(uint i=0;i<args.size();i++)
+	for(int i=0; i < args.size(); i++)
 	{
 		if(args[i] == key)
+		{
 			return true;
+		}
 	}
 	return false;
 }
@@ -23,11 +25,11 @@ bool args_contains(std::string key)
 //[doc] pega o valor do parametro
 std::string param_get(std::string key)
 {
-	for(uint i=0;i<args.size();i++)
+	for(int i=0; i < args.size(); i++)
 	{
 		if(args[i] == key)
 		{
-			if(args.size() >= i+2)
+			if(args.size() >= (i + 2))
 				return args[i+1];
 			else
 				return "";
@@ -35,24 +37,25 @@ std::string param_get(std::string key)
 	}
 	return "";
 }
-void ael_argv(aelinterpreter& ael, phrase& ph)
+
+void ael_argv(aelinterpreter &ael, phrase &ph)
 {
-	if(ph.size()!=3)
+	if(ph.size() != 3)
 	{
 		std::cerr << "Error: " << ph[0] << " takes exactly 2 arguments (" << ph.size()-1 << " given)" << std::endl;
 		return;
 	}
-	uint arg_index = atoi(ael.get_value(ph[1]).c_str());
+	int arg_index = atoi(ael.get_value(ph[1]).c_str());
 	ael.dictionary[ph[2]] = args[arg_index];
 }
 
 aelinterpreter i;
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
 	load_main_ael_functions(i);
 	load_io_functions(i);
 	load_string_functions(i);
-	for(int i=0;i<argc;i++)
+	for(int i=0; i < argc; i++)
 	{
 		args.push_back(argv[i]);
 	}
@@ -61,16 +64,16 @@ int main(int argc, char* argv[])
 	if (argc == 1)
 	{ // [fixme] > here document with interpreter
 		std::cerr << argv[0] << ": missing file operand" << std::endl;
-		exit(-1);
+		return -1;
 	}
-	for(int i=0;i<argc;i++)
+	for(int i=0; i < argc; i++)
 	{
 		args.push_back(argv[i]);
 	}
 	if(args_contains("-v"))
 	{
 		std::cout << "Ael Version: " << AEL_VERSION << std::endl;
-		exit(0);
+		return 0;
 	}
 	phrase ph;
 	if(param_get("-c") != "")
@@ -83,5 +86,6 @@ int main(int argc, char* argv[])
 		i.to_tokens(script_file.c_str(), ph);
 	}
 	i.interprets(ph);
+
 	return 0;
 }

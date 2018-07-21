@@ -7,7 +7,7 @@ Ael is a minimized version of Tcl's syntax, but in implementation is very differ
 
 ## compilation
 ```bash
-g++ ael.c -std=c++11
+make
 ```
 
 ## Example
