@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -pedantic -std=c++11
+CFLAGS = -pedantic -std=c++11 -lpthread
 
 all: ael
 

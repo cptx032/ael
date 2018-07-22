@@ -10,6 +10,7 @@ Author: Willie Lawrence - cptx032@gmail.com
 #include <vector>
 #include <unordered_map> // hash_map
 #include <fstream> // reading file
+#include <thread>
 
 #define AEL_VERSION "0.0.3"
 
@@ -724,8 +725,22 @@ void _ael_load(aelinterpreter &ael, phrase &ph)
 	}
 }
 
+// function that receives a phrase and run it
+void async_interprets(aelinterpreter ael, phrase ph) {
+	ael.interprets(ph);
+}
+// async <CODE>
+void _ael_async(aelinterpreter& ael, phrase& ph) {
+	if (_ael_error_invalid_number_arguments_exact(ph, 1)) {
+		return;
+	}
+	phrase code;
+	ael.to_tokens(ael.get_value(ph[1]).c_str(), code);
+	std::thread(async_interprets, ael, code).detach();
+}
+
 //[doc] load main functions
-void load_main_ael_functions(aelinterpreter&i)
+void load_main_ael_functions(aelinterpreter &i)
 {
 	i.functions["trace"] = _ael_trace;
 	i.functions["set"] = _ael_set;
@@ -742,6 +757,7 @@ void load_main_ael_functions(aelinterpreter&i)
 	i.functions["if"] = _ael_if;
 	i.functions["stack"] = _ael_stack;
 	i.functions["load"] = _ael_load;
+	i.functions["async"] = _ael_async;
 	i.dictionary["__ael_version"] = AEL_VERSION;
 	i.dictionary[AEL_DEFAULT_FUNCTION] = "run";
 }
