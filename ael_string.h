@@ -17,7 +17,7 @@ void _ael_strcat(aelinterpreter &ael, phrase &ph)
 	ael.dictionary[dest] = ael.get_value(ph[1]) + ael.get_value(ph[2]);
 }
 
-// chr HEX_CODE DEST
+// chr ASCII_CODE DEST
 void _ael_chr(aelinterpreter &ael, phrase &ph)
 {
 	if (_ael_error_invalid_number_arguments_exact(ph, 2))

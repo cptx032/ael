@@ -320,6 +320,7 @@ void _ael_trace(aelinterpreter &ael, phrase &ph)
 	{
 		std::cout << ael.get_value(ph[i]) << " ";
 	}
+	std::cout << std::endl;
 }
 
 //[doc] creates a var in interpreter dictionary
