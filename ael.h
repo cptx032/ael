@@ -727,17 +727,17 @@ void _ael_load(aelinterpreter &ael, phrase &ph)
 }
 
 // function that receives a phrase and run it
-void async_interprets(aelinterpreter ael, phrase ph) {
-	ael.interprets(ph);
+void async_interprets(aelinterpreter *ael, phrase ph) {
+	ael->interprets(ph);
 }
 // async <CODE>
-void _ael_async(aelinterpreter& ael, phrase& ph) {
+void _ael_async(aelinterpreter &ael, phrase &ph) {
 	if (_ael_error_invalid_number_arguments_exact(ph, 1)) {
 		return;
 	}
 	phrase code;
 	ael.to_tokens(ael.get_value(ph[1]).c_str(), code);
-	std::thread(async_interprets, ael, code).detach();
+	std::thread(async_interprets, &ael, code).detach();
 }
 
 //[doc] load main functions
