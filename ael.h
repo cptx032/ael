@@ -11,8 +11,9 @@ Author: Willie Lawrence - cptx032@gmail.com
 #include <unordered_map> // hash_map
 #include <fstream> // reading file
 #include <thread>
+#include <random>
 
-#define AEL_VERSION "0.0.3"
+#define AEL_VERSION "0.0.4"
 
 // when a function is not found the function saved
 // in this var is runned
@@ -120,13 +121,16 @@ public:
 	// defining "aelfunction": a function-type to ael-functions
 	// each ael-function must return void and receive the interpreter
 	// followed by a phrase
-	typedef void(*aelfunction)(aelinterpreter&,phrase&);
+	typedef void(*aelfunction)(aelinterpreter&, phrase&);
 
 	// stores the ael functions
 	std::unordered_map<tok, aelfunction> functions;
 
 	// stores the ael lists, called here by "stack"
 	std::unordered_map<tok, string_stack> stack;
+
+	// stores the hashes
+	std::unordered_map<tok, std::unordered_map<tok, tok> > maps;
 
 	aelinterpreter(){}
 
@@ -692,17 +696,64 @@ void _ael_stack_variable(aelinterpreter &i, phrase &ph)
 	}
 	else
 	{
-		_ael_error(ph, "invalid command");
+		_ael_error(ph, "invalid hash command");
 	}
 }
 
-void _ael_stack(aelinterpreter &i, phrase &ph)
+void _ael_stack(aelinterpreter &ael, phrase &ph)
 {
 	if (_ael_error_invalid_number_arguments_exact(ph, 1))
 	{
 		return;
 	}
-	i.functions[ph[1]] = _ael_stack_variable;
+	ael.functions[ael.get_value(ph[1])] = _ael_stack_variable;
+
+}
+
+void _ael_map_variable(aelinterpreter &ael, phrase &ph)
+{
+	// map map_name.
+	// map_name update key1 value1 key2 value2 (...).
+	// map_name get key dest_var.
+	if(_ael_error_invalid_number_arguments_minimum(ph, 3))
+	{
+		return;
+	}
+	tok command = ph[1];
+
+	if (command == "get")
+	{
+		if(_ael_error_invalid_number_arguments_exact(ph, 3))
+		{
+			return;
+		}
+		tok key = ael.get_value(ph[2]);
+		ael.dictionary[ph[3]] = ael.maps[ph[0]][key];
+	}
+	else if (command == "update")
+	{
+		if (((ph.size() - 2) % 2) != 0)
+		{
+			_ael_error(ph, "map update must have keys and values");
+			return;
+		}
+		for (int i=2; i < ph.size(); i+=2)
+		{
+			ael.maps[ph[0]][ael.get_value(ph[i])] = ael.get_value(ph[i + 1]);
+		}
+	}
+	else
+	{
+		_ael_error(ph, "invalid map command");
+	}
+}
+void _ael_map(aelinterpreter &ael, phrase &ph)
+{
+	if (_ael_error_invalid_number_arguments_exact(ph, 1))
+	{
+		return;
+	}
+	ael.functions[ael.get_value(ph[1])] = _ael_map_variable;
 
 }
 
@@ -722,7 +773,7 @@ void _ael_load(aelinterpreter &ael, phrase &ph)
 	}
 	for (int i=1; i < ph.size() - 1; i+=2)
 	{
-		ael.dictionary[ph[i+1]] = get_file_content(ph[i].c_str());
+		ael.dictionary[ph[i + 1]] = get_file_content(ph[i].c_str());
 	}
 }
 
@@ -738,6 +789,22 @@ void _ael_async(aelinterpreter &ael, phrase &ph) {
 	phrase code;
 	ael.to_tokens(ael.get_value(ph[1]).c_str(), code);
 	std::thread(async_interprets, &ael, code).detach();
+}
+
+// randint min max DESTVAR
+void _ael_randint(aelinterpreter &ael, phrase &ph) {
+	if (_ael_error_invalid_number_arguments_exact(ph, 3)) {
+		return;
+	}
+	int min = atoi(ael.get_value(ph[1]).c_str());
+	int max = atoi(ael.get_value(ph[2]).c_str());
+
+	std::random_device rd;
+	std::mt19937 rng(rd());
+	std::uniform_int_distribution<int> uni(min, max);
+	int random_integer = uni(rng);
+
+	ael.dictionary[ph[3]] = to_string(random_integer);
 }
 
 //[doc] load main functions
@@ -759,6 +826,8 @@ void load_main_ael_functions(aelinterpreter &i)
 	i.functions["stack"] = _ael_stack;
 	i.functions["load"] = _ael_load;
 	i.functions["async"] = _ael_async;
+	i.functions["randint"] = _ael_randint;
+	i.functions["map"] = _ael_map;
 	i.dictionary["__ael_version"] = AEL_VERSION;
 	i.dictionary[AEL_DEFAULT_FUNCTION] = "run";
 }

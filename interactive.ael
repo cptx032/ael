@@ -1,5 +1,6 @@
+trace Ael __ael_version.
 set interprets {
-	trace >>.
+	print {>> }.
 	input command.
 	run command.
 	run interprets.
